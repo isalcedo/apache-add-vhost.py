@@ -48,10 +48,10 @@ def start_bs(domain, path):
         vhostfile.write(template.format(**data))
 
     with open("/etc/httpd/conf/httpd.conf", "a") as httpdfile:
-        httpdfile.write("Include conf/vhosts/" + domain)
+        httpdfile.write("{}\n".format("Include conf/vhosts/" + domain))
 
     with open("/etc/hosts", "a") as hostsfile:
-        hostsfile.write("127.0.0.1       " + domain)
+        hostsfile.write("{}\n".format("127.0.0.1       " + domain))
 
     os.system(
         'systemctl restart httpd'
