@@ -40,28 +40,56 @@ template = """
 """
 
 
-def start_bs(domain, path):
-    data = {"path": path,
-            "domain": domain}
+def start_bs(domain, path, remove=False):
+    if remove is True:
+        os.remove("/etc/httpd/conf/vhosts/" + domain)
 
-    with open("/etc/httpd/conf/vhosts/" + domain, "w+") as vhostfile:
-        vhostfile.write(template.format(**data))
+        httpdfile = open("/etc/httpd/conf/httpd.conf", "r")
+        lines = httpdfile.readlines()
+        httpdfile.close()
 
-    with open("/etc/httpd/conf/httpd.conf", "a") as httpdfile:
-        httpdfile.write("{}\n".format("Include conf/vhosts/" + domain))
+        httpdfile = open("/etc/httpd/conf/httpd.conf", "w")
+        for i in lines:
+            if i != "Include conf/vhosts/" + domain + "\n":
+                httpdfile.write(i)
+        httpdfile.close()
 
-    with open("/etc/hosts", "a") as hostsfile:
-        hostsfile.write("{}\n".format("127.0.0.1       " + domain))
+        hostsfile = open("/etc/hosts", "r")
+        lines = hostsfile.readlines()
+        hostsfile.close()
 
-    os.system(
-        'systemctl restart httpd'
-    )
+        hostsfile = open("/etc/hosts", "w")
+        for i in lines:
+            if i != "127.0.0.1       " + domain + "\n":
+                hostsfile.write(i)
+        hostsfile.close()
+
+        os.system(
+            'systemctl restart httpd'
+        )
+
+    else:
+        data = {"path": path,
+                "domain": domain}
+
+        with open("/etc/httpd/conf/vhosts/" + domain, "w+") as vhostfile:
+            vhostfile.write(template.format(**data))
+
+        with open("/etc/httpd/conf/httpd.conf", "a") as httpdfile:
+            httpdfile.write("{}\n".format("Include conf/vhosts/" + domain))
+
+        with open("/etc/hosts", "a") as hostsfile:
+            hostsfile.write("{}\n".format("127.0.0.1       " + domain))
+
+        os.system(
+            'systemctl restart httpd'
+        )
 
 
 # Dealing with arguments.
 parser = argparse.ArgumentParser(
-    description=("""Start BrowserSync for Joomla 3 site development,
-                    or Advanced Yii2 Development""")
+    description=("""Create a virtualhost in Apache for local
+                    serving (Archlinux and variants)""")
 )
 
 parser.add_argument(
@@ -76,7 +104,13 @@ parser.add_argument(
     help='Define the absolute path to the project folder'
 )
 
+parser.add_argument(
+    '-remove',
+    action='store_true',
+    help='(optional) For removing the domain from local machine'
+)
+
 arguments = parser.parse_args()
 
 # Main Script
-start_bs(arguments.domain, arguments.path)
+start_bs(arguments.domain, arguments.path, arguments.remove)
